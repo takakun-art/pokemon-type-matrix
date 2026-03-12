@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TYPE MATRIX</title>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700;800&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080a12;--bg2:#0b0d18;--bg3:#0e1020;
+  --border:#181c30;--border2:#222440;
+  --accent:#4a5aff;--accent2:#8090ff;
+  --text:#c0c8e0;--muted:#2a3050;
+}
+body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'M PLUS 1p','Noto Sans JP',sans-serif;font-size:13px}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:#252840;border-radius:2px}
+input,select{background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:5px 9px;font-size:12px;font-family:inherit;outline:none;transition:border-color 0.15s}
+input:focus,select:focus{border-color:var(--accent)}
+button{cursor:pointer;font-family:inherit;border:none;border-radius:4px;transition:all 0.15s}
+.tb{display:inline-flex;align-items:center;padding:2px 5px;border-radius:3px;font-size:10px;font-weight:800;white-space:nowrap;line-height:1.4}
+.section{background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:12px 14px;margin-bottom:10px}
+.slabel{font-size:9px;color:var(--accent);font-weight:800;letter-spacing:2px;margin-bottom:8px;font-family:'Rajdhani',sans-serif}
+.cell{border-radius:3px;padding:4px 2px;text-align:center;font-size:11px;font-weight:700;
+  font-family:'Rajdhani',sans-serif;transition:transform 0.1s,filter 0.1s;cursor:default;user-select:none;min-width:48px}
+.cell:hover{transform:scale(1.12);filter:brightness(1.4);z-index:30;position:relative;box-shadow:0 0 8px rgba(255,255,255,0.1)}
+.def-th{padding:4px 2px;text-align:center;cursor:pointer;user-select:none}
+.def-th-inner{display:flex;flex-direction:column;align-items:center;gap:2px;padding:3px 2px;border-radius:4px;transition:background 0.15s}
+.def-th:hover .def-th-inner{background:#1a1e30}
+.sep-th{width:6px;min-width:6px;padding:0;background:transparent;border-left:1px dashed #1e2235 !important}
+.sep-td{width:6px;min-width:6px;padding:0;background:transparent;border-left:1px dashed #1e2235 !important}
+table{border-collapse:separate;border-spacing:2px}
+th,td{vertical-align:middle}
+tr.row-hl .sticky-col{background:#0f1225 !important}
+tr.row-hl td:not(.sticky-col){background:#0f1225 !important}
+tr.even .sticky-col{background:var(--bg)}
+tr.odd  .sticky-col{background:#0a0c18}
+
+/* ★ sticky列 */
+.sticky-col{
+  position:sticky;
+  left:0;
+  z-index:10;
+  background:var(--bg); /* デフォルト偶数行 */
+  box-shadow:2px 0 8px rgba(0,0,0,0.6);
+}
+.sticky-th{
+  position:sticky;
+  left:0;
+  z-index:20;
+  background:var(--bg2);
+  box-shadow:2px 0 8px rgba(0,0,0,0.6);
+}
+
+.atk-td{padding:3px 6px;cursor:pointer;user-select:none;white-space:nowrap}
+.combo-chip{display:inline-flex;align-items:center;gap:3px;background:var(--bg3);border:1px solid #1e2235;
+  border-radius:5px;padding:2px 6px;font-size:11px;cursor:pointer;transition:all 0.15s}
+.combo-chip:hover{border-color:#3a4a80}
+.combo-chip.excluded{opacity:0.35;border-style:dashed}
+.rm-btn{color:#2a3050;font-size:10px;margin-left:1px;background:none;border:none;cursor:pointer;padding:0 1px;line-height:1}
+.rm-btn:hover{color:#d04040}
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid #141828;align-items:center}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)}
+.legend-cell{border-radius:3px;padding:2px 6px;font-weight:700;font-size:10px;font-family:'Rajdhani',sans-serif;border:1px solid #1a1e2e}
+.fl{font-size:9px;color:#555;margin-bottom:4px}
+.type-grid{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+.type-btn{padding:3px 10px;border-radius:4px;font-size:11px;font-weight:800;color:#fff;
+  border:2px solid transparent;opacity:0.55;transition:all 0.15s;cursor:pointer}
+.type-btn:hover{opacity:0.85;transform:scale(1.05)}
+.type-btn.selected{opacity:1;border-color:#fff;box-shadow:0 0 6px rgba(255,255,255,0.25)}
+.tab{padding:4px 12px;font-size:11px;font-weight:700;border-radius:4px 4px 0 0;
+  border:1px solid #1e2235;border-bottom:none;color:#555;background:var(--bg3);cursor:pointer}
+.tab.active{color:var(--accent2);background:#14183a;border-color:var(--accent)}
+.tab-panel{display:none;background:var(--bg);border:1px solid #1e2235;border-radius:0 4px 4px 4px;padding:12px}
+.tab-panel.active{display:block}
+#preview-list{display:flex;gap:4px;flex-wrap:wrap;min-height:24px;margin:8px 0}
+.preview-chip{display:inline-flex;align-items:center;gap:2px;background:#1a1e30;border:1px solid #2a2e50;
+  border-radius:4px;padding:2px 6px;font-size:10px}
+.action-btn{background:#14183a;border:1px solid var(--accent);color:var(--accent2);
+  padding:5px 14px;font-weight:700;font-size:12px;border-radius:4px}
+.action-btn:hover{filter:brightness(1.2)}
+.action-btn:disabled{opacity:0.3;cursor:not-allowed}
+.sub-btn{background:var(--bg3);border:1px solid #1e2235;color:#555;padding:4px 10px;font-size:11px}
+.sub-btn:hover{border-color:#3a4a80;color:#aaa}
+</style>
+</head>
+<body>
+
+<div style="background:#0b0d18;border-bottom:1px solid #181c30;padding:11px 18px;display:flex;align-items:center;gap:10px">
+  <span style="font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:700;letter-spacing:3px;color:#4a5aff">TYPE MATRIX</span>
+  <span style="font-size:10px;color:#2a3050;letter-spacing:1px">Pokémon GO · PvP</span>
+  <span style="margin-left:auto;font-size:10px;color:#2a3050">防御タイプをタップ → 右端に移動　攻撃タイプをタップ → 除外</span>
+</div>
+
+<div style="padding:12px 16px;max-width:2200px;margin:0 auto">
+
+  <div class="section">
+    <div class="slabel">防御：複合タイプ追加</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-height:26px;margin-bottom:10px" id="combo-list">
+      <span style="font-size:11px;color:var(--muted)">複合タイプなし</span>
+    </div>
+    <div style="display:flex;gap:2px;margin-bottom:0">
+      <button class="tab active" onclick="switchTab('bulk')">まとめて追加</button>
+      <button class="tab" onclick="switchTab('single')">1つずつ追加</button>
+    </div>
+    <div class="tab-panel active" id="panel-bulk">
+      <div style="flex:1;min-width:200px;margin-bottom:8px">
+        <div class="fl">① 軸タイプを選ぶ（選択したタイプとの複合を全追加）</div>
+        <div class="type-grid" id="bulk-type-grid"></div>
+      </div>
+      <div>
+        <div class="fl">追加されるタイプ組み合わせ <span id="preview-count" style="color:var(--accent2)"></span></div>
+        <div id="preview-list"><span style="font-size:11px;color:var(--muted)">タイプを選択してください</span></div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <button class="action-btn" id="bulk-add-btn" onclick="bulkAdd()" disabled>まとめて追加</button>
+        <button class="sub-btn" onclick="clearBulkSelection()">選択クリア</button>
+        <button class="sub-btn" onclick="resetExcluded()">除外リセット</button>
+        <button class="sub-btn" onclick="removeAllCombos()">複合タイプを全削除</button>
+      </div>
+    </div>
+    <div class="tab-panel" id="panel-single">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+        <div><div class="fl">タイプ1</div><select id="new-t1"></select></div>
+        <div><div class="fl">タイプ2</div><select id="new-t2"></select></div>
+        <button class="action-btn" onclick="addSingle()">追加</button>
+        <button class="sub-btn" onclick="resetExcluded()">除外リセット</button>
+        <button class="sub-btn" onclick="removeAllCombos()">複合タイプを全削除</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" style="overflow-x:auto">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+      <div class="slabel" style="margin:0">TYPE CHART</div>
+      <span style="font-size:10px;color:var(--muted)">行: 攻撃タイプ ／ 列: 防御タイプ</span>
+    </div>
+    <div id="matrix-wrap"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+</div>
+
+<script>
+const TYPES = ["ノーマル","ほのお","みず","くさ","でんき","こおり","かくとう","どく","じめん","ひこう","エスパー","むし","いわ","ゴースト","ドラゴン","あく","はがね","フェアリー"];
+
+const TYPE_CHART = {
+  ノーマル:   {いわ:0.625,はがね:0.625,ゴースト:0},
+  ほのお:     {ほのお:0.625,みず:0.625,いわ:0.625,ドラゴン:0.625,くさ:1.6,こおり:1.6,むし:1.6,はがね:1.6},
+  みず:       {みず:0.625,くさ:0.625,ドラゴン:0.625,ほのお:1.6,じめん:1.6,いわ:1.6},
+  くさ:       {ほのお:0.625,くさ:0.625,どく:0.625,ひこう:0.625,むし:0.625,ドラゴン:0.625,はがね:0.625,みず:1.6,じめん:1.6,いわ:1.6},
+  でんき:     {くさ:0.625,でんき:0.625,ドラゴン:0.625,じめん:0,みず:1.6,ひこう:1.6},
+  こおり:     {みず:0.625,こおり:0.625,ほのお:0.625,はがね:0.625,くさ:1.6,じめん:1.6,ひこう:1.6,ドラゴン:1.6},
+  かくとう:   {どく:0.625,むし:0.625,エスパー:0.625,ひこう:0.625,フェアリー:0.625,ゴースト:0,ノーマル:1.6,こおり:1.6,いわ:1.6,あく:1.6,はがね:1.6},
+  どく:       {どく:0.625,じめん:0.625,いわ:0.625,ゴースト:0.625,はがね:0.390625,くさ:1.6,フェアリー:1.6},
+  じめん:     {くさ:0.625,むし:0.625,ひこう:0,ほのお:1.6,でんき:1.6,どく:1.6,いわ:1.6,はがね:1.6},
+  ひこう:     {でんき:0.625,いわ:0.625,はがね:0.625,くさ:1.6,かくとう:1.6,むし:1.6},
+  エスパー:   {エスパー:0.625,はがね:0.625,あく:0,かくとう:1.6,どく:1.6},
+  むし:       {ほのお:0.625,かくとう:0.625,ひこう:0.625,ゴースト:0.625,はがね:0.625,どく:0.625,フェアリー:0.625,くさ:1.6,エスパー:1.6,あく:1.6},
+  いわ:       {かくとう:0.625,じめん:0.625,はがね:0.625,ほのお:1.6,こおり:1.6,ひこう:1.6,むし:1.6},
+  ゴースト:   {あく:0.625,ノーマル:0,ゴースト:1.6,エスパー:1.6},
+  ドラゴン:   {はがね:0.625,フェアリー:0,ドラゴン:1.6},
+  あく:       {かくとう:0.625,あく:0.625,フェアリー:0.625,エスパー:1.6,ゴースト:1.6},
+  はがね:     {ほのお:0.625,みず:0.625,でんき:0.625,はがね:0.625,こおり:1.6,いわ:1.6,フェアリー:1.6},
+  フェアリー: {ほのお:0.625,どく:0.625,はがね:0.625,かくとう:1.6,ドラゴン:1.6,あく:1.6},
+};
+
+const TYPE_COLOR = {
+  ノーマル:"#9e9e9e",ほのお:"#e64a19",みず:"#0288d1",くさ:"#388e3c",でんき:"#c8a000",
+  こおり:"#00838f",かくとう:"#c62828",どく:"#6a1b9a",じめん:"#5d4037",ひこう:"#3949ab",
+  エスパー:"#ad1457",むし:"#558b2f",いわ:"#6d4c41",ゴースト:"#4527a0",ドラゴン:"#1565c0",
+  あく:"#455a64",はがね:"#546e7a",フェアリー:"#c2185b"
+};
+
+function multInfo(v) {
+  if (v >= 2.55) return {bg:"#7f0000", text:"#ffcdd2", label:"×2.56"};
+  if (v >= 1.59) return {bg:"#c62828", text:"#fff",    label:"×1.6"};
+  if (v >= 0.99 && v <= 1.01) return {bg:"#151825", text:"#3a4060", label:"×1"};
+  if (v <= 0.01) return {bg:"#0d0f18", text:"#1e2235", label:"×0"};
+  if (v <= 0.40) return {bg:"#0a1d30", text:"#3a7ab0", label:"×0.39"};
+  return               {bg:"#112040", text:"#5090c8", label:"×0.625"};
+}
+
+function getEff(atk, defTypes) {
+  let m = 1;
+  for (const d of defTypes) m *= (TYPE_CHART[atk]?.[d] ?? 1);
+  return m;
+}
+
+let defCols = TYPES.map((t, i) => ({id:'s'+i, types:[t], excluded:false}));
+let combos  = [];
+let comboId = 0;
+let atkOff  = {};
+let bulkSelected = [];
+
+const t1sel = document.getElementById('new-t1');
+const t2sel = document.getElementById('new-t2');
+TYPES.forEach(t => {
+  t1sel.innerHTML += `<option>${t}</option>`;
+  t2sel.innerHTML += `<option>${t}</option>`;
+});
+t2sel.value = 'みず';
+
+const bulkGrid = document.getElementById('bulk-type-grid');
+TYPES.forEach(t => {
+  const btn = document.createElement('button');
+  btn.className = 'type-btn';
+  btn.textContent = t;
+  btn.style.background = TYPE_COLOR[t];
+  btn.onclick = () => toggleBulkType(t, btn);
+  bulkGrid.appendChild(btn);
+});
+
+function toggleBulkType(t, btn) {
+  const idx = bulkSelected.indexOf(t);
+  if (idx >= 0) { bulkSelected.splice(idx,1); btn.classList.remove('selected'); }
+  else          { bulkSelected.push(t);        btn.classList.add('selected'); }
+  updateBulkPreview();
+}
+
+function clearBulkSelection() {
+  bulkSelected = [];
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+  updateBulkPreview();
+}
+
+function canonical(t1,t2){ return [t1,t2].sort().join('|'); }
+
+function getNewPairsFromSelection() {
+  const existing = new Set(combos.map(c => canonical(c.types[0],c.types[1])));
+  const seen = new Set(existing);
+  const pairs = [];
+  for (const t1 of bulkSelected) {
+    for (const t2 of TYPES) {
+      if (t1===t2) continue;
+      const key = canonical(t1,t2);
+      if (!seen.has(key)) { seen.add(key); const i1=TYPES.indexOf(t1),i2=TYPES.indexOf(t2); pairs.push(i1<i2?[t1,t2]:[t2,t1]); }
+    }
+  }
+  pairs.sort((a,b)=>TYPES.indexOf(a[0])-TYPES.indexOf(b[0])||TYPES.indexOf(a[1])-TYPES.indexOf(b[1]));
+  return pairs;
+}
+
+function updateBulkPreview() {
+  const preview=document.getElementById('preview-list');
+  const countEl=document.getElementById('preview-count');
+  const btn=document.getElementById('bulk-add-btn');
+  if (bulkSelected.length===0) {
+    preview.innerHTML='<span style="font-size:11px;color:var(--muted)">タイプを選択してください</span>';
+    countEl.textContent=''; btn.disabled=true; return;
+  }
+  const pairs=getNewPairsFromSelection();
+  if (pairs.length===0) {
+    preview.innerHTML='<span style="font-size:11px;color:var(--muted)">追加できる新しい組み合わせがありません</span>';
+    countEl.textContent=''; btn.disabled=true; return;
+  }
+  countEl.textContent=`(${pairs.length}件)`;
+  preview.innerHTML=pairs.map(([t1,t2])=>`<div class="preview-chip">
+    <span class="tb" style="background:${TYPE_COLOR[t1]};color:#fff">${t1}</span>
+    <span class="tb" style="background:${TYPE_COLOR[t2]};color:#fff">${t2}</span>
+  </div>`).join('');
+  btn.disabled=false;
+}
+
+function bulkAdd() {
+  getNewPairsFromSelection().forEach(([t1,t2])=>combos.push({id:'c'+(comboId++),types:[t1,t2],excluded:false}));
+  clearBulkSelection(); renderAll();
+}
+
+function addSingle() {
+  const t1=document.getElementById('new-t1').value, t2=document.getElementById('new-t2').value;
+  if (!t1||!t2||t1===t2){alert('異なるタイプを2つ選んでください');return;}
+  if (combos.some(c=>(c.types[0]===t1&&c.types[1]===t2)||(c.types[0]===t2&&c.types[1]===t1))){alert('すでに追加済みです');return;}
+  combos.push({id:'c'+(comboId++),types:[t1,t2],excluded:false}); renderAll();
+}
+
+function removeAllCombos() {
+  if (!confirm('複合タイプをすべて削除しますか？')) return;
+  combos=[]; renderAll();
+}
+
+function removeCombo(id,e) { e.stopPropagation(); combos=combos.filter(c=>c.id!==id); renderAll(); }
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['bulk','single'][i]===name));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));
+}
+
+function allDefCols(){ return [...defCols,...combos]; }
+
+function toggleDef(id) {
+  const col=allDefCols().find(c=>c.id===id);
+  if(col){col.excluded=!col.excluded; renderAll();}
+}
+
+function toggleAtk(type){ atkOff[type]=!atkOff[type]; renderAll(); }
+
+function resetExcluded() {
+  defCols.forEach(c=>c.excluded=false); combos.forEach(c=>c.excluded=false); atkOff={}; renderAll();
+}
+
+function renderComboList() {
+  const el=document.getElementById('combo-list');
+  if(combos.length===0){el.innerHTML='<span style="font-size:11px;color:var(--muted)">複合タイプなし</span>';return;}
+  el.innerHTML=combos.map(c=>`
+    <div class="combo-chip${c.excluded?' excluded':''}" onclick="toggleDef('${c.id}')">
+      <span class="tb" style="background:${TYPE_COLOR[c.types[0]]};color:#fff">${c.types[0]}</span>
+      <span class="tb" style="background:${TYPE_COLOR[c.types[1]]};color:#fff">${c.types[1]}</span>
+      <button class="rm-btn" onclick="removeCombo('${c.id}',event)">✕</button>
+    </div>`).join('');
+}
+
+function defThHTML(col, isExcluded) {
+  const t1=col.types[0], t2=col.types[1];
+  const tip=isExcluded?'タップで戻す':'タップで右端へ移動';
+  return `<th class="def-th" onclick="toggleDef('${col.id}')" title="${tip}" style="${isExcluded?'opacity:0.25':''}">
+    <div class="def-th-inner">
+      <span class="tb" style="background:${TYPE_COLOR[t1]};color:#fff">${t1}</span>
+      ${t2?`<span class="tb" style="background:${TYPE_COLOR[t2]};color:#fff">${t2}</span>`:''}
+    </div>
+  </th>`;
+}
+
+function cellHTML(atkType, col, isAtkOff, isDefExcluded) {
+  const v=getEff(atkType,col.types), s=multInfo(v), dim=isAtkOff||isDefExcluded;
+  return `<td style="padding:2px;${dim?'opacity:0.15':''}">
+    <div class="cell" style="background:${s.bg};color:${s.text}">${s.label}</div>
+  </td>`;
+}
+
+function renderMatrix() {
+  const all=allDefCols(), active=all.filter(c=>!c.excluded), excluded=all.filter(c=>c.excluded), hasSep=excluded.length>0;
+
+  let html='<table><thead><tr>';
+  // 左上コーナー：sticky
+  html+=`<th class="sticky-th" style="padding:4px 8px;text-align:left;min-width:80px;white-space:nowrap;font-size:10px;color:var(--muted);font-weight:400;border-bottom:1px solid #1e2235;border-right:1px solid #1e2235">攻撃 ↓ / 防御 →</th>`;
+  active.forEach(col=>{ html+=defThHTML(col,false); });
+  if(hasSep) html+=`<th class="sep-th"></th>`;
+  excluded.forEach(col=>{ html+=defThHTML(col,true); });
+  html+='</tr></thead><tbody>';
+
+  TYPES.forEach((atkType,ri)=>{
+    const off=!!atkOff[atkType];
+    const rowBg=ri%2===0?'var(--bg)':'#0a0c18';
+    html+=`<tr class="${ri%2===0?'even':'odd'}" onmouseenter="this.classList.add('row-hl')" onmouseleave="this.classList.remove('row-hl')">`;
+    // 攻撃タイプ：sticky
+    html+=`<td class="atk-td sticky-col" onclick="toggleAtk('${atkType}')" title="タップで除外"
+      style="border-right:1px solid #1e2235;background:${rowBg};${off?'opacity:0.25':''}">
+      <span class="tb" style="background:${TYPE_COLOR[atkType]};color:#fff;padding:3px 8px;font-size:11px">${atkType}</span>
+    </td>`;
+    active.forEach(col=>{ html+=cellHTML(atkType,col,off,false); });
+    if(hasSep) html+=`<td class="sep-td"></td>`;
+    excluded.forEach(col=>{ html+=cellHTML(atkType,col,off,true); });
+    html+='</tr>';
+  });
+
+  html+='</tbody></table>';
+  document.getElementById('matrix-wrap').innerHTML=html;
+}
+
+function renderLegend() {
+  const items=[{v:2.56,l:"超効果抜群"},{v:1.6,l:"効果抜群"},{v:1,l:"等倍"},{v:0.625,l:"今一つ"},{v:0.390625,l:"今一つ²"},{v:0,l:"無効"}];
+  document.getElementById('legend').innerHTML=
+    '<span style="font-size:9px;color:var(--muted);letter-spacing:1px;font-family:Rajdhani">LEGEND</span>'+
+    items.map(({v,l})=>{const s=multInfo(v);return`<div class="legend-item"><div class="legend-cell" style="background:${s.bg};color:${s.text}">${s.label}</div><span>${l}</span></div>`;}).join('');
+}
+
+function renderAll(){ renderComboList(); renderMatrix(); renderLegend(); }
+renderAll();
+</script>
+</body>
+</html>
