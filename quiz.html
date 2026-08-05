@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>タイプ相性クイズ｜Pokémon GO PvP 60秒</title>
+<meta name="description" content="Pokémon GO PvPのタイプ相性を60秒で何問答えられるか。表を見ずに反射で出せるか試すクイズ。">
+<style>
+:root{
+  --bg:#0b1220; --panel:#131f36; --line:#22304d; --fg:#e8eef8; --muted:#8ba0c0;
+  --up:#c62828; --down:#112040; --downfg:#5090c8; --accent:#ffb300;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--fg); font-weight:700;
+  font-family:system-ui,-apple-system,"Segoe UI","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+  display:flex; justify-content:center;
+  padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom));
+}
+.wrap{width:100%;max-width:520px}
+h1{font-size:1.05rem;margin:0 0 2px;letter-spacing:.02em}
+.sub{color:var(--muted);font-size:.78rem;font-weight:600;margin:0 0 14px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+
+/* HUD */
+.hud{display:flex;gap:8px;margin-bottom:12px}
+.hud div{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 6px;text-align:center}
+.hud b{display:block;font-size:1.35rem;line-height:1.1;font-variant-numeric:tabular-nums}
+.hud span{font-size:.66rem;color:var(--muted);font-weight:600}
+#bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:12px}
+#bar i{display:block;height:100%;width:100%;background:var(--accent);transition:width .25s linear}
+
+/* 問題 */
+.q{text-align:center;padding:6px 0 14px}
+.qlabel{font-size:.7rem;color:var(--muted);font-weight:600;margin-bottom:6px}
+.chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.chip{padding:7px 13px;border-radius:999px;font-size:.95rem;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.45)}
+.arrow{text-align:center;color:var(--muted);font-size:1.1rem;margin:9px 0}
+
+/* 選択肢 */
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px}
+button{font:inherit;font-weight:700;cursor:pointer;border:none}
+.opt{padding:17px 6px;border-radius:11px;background:#1c2b47;color:var(--fg);
+     font-size:1.22rem;border:1px solid var(--line);font-variant-numeric:tabular-nums;
+     transition:transform .06s}
+.opt:active{transform:scale(.97)}
+.opt.ok{background:var(--up);border-color:var(--up);color:#fff}
+.opt.ng{background:#37102a;border-color:#7a2247;color:#ff9ec4}
+.opt:disabled{cursor:default}
+
+/* 開始・結果 */
+.big{width:100%;padding:16px;border-radius:12px;background:var(--accent);color:#231a00;font-size:1.05rem;margin-top:12px}
+.ghost{width:100%;padding:13px;border-radius:12px;background:transparent;color:var(--muted);
+       border:1px solid var(--line);font-size:.85rem;margin-top:8px}
+.center{text-align:center}
+.score{font-size:3rem;line-height:1;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.hint{color:var(--muted);font-size:.76rem;font-weight:600;line-height:1.65}
+.rows{margin-top:14px;border-top:1px solid var(--line);padding-top:12px;max-height:38vh;overflow:auto}
+.row{display:flex;justify-content:space-between;gap:8px;font-size:.78rem;font-weight:600;
+     padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.row .m{color:var(--muted);font-weight:600}
+.row.miss .v{color:#ff9ec4}
+.modes{display:flex;gap:8px;margin-top:12px}
+.modes button{flex:1;padding:11px 4px;border-radius:10px;background:#1c2b47;border:1px solid var(--line);
+              color:var(--muted);font-size:.8rem}
+.modes button[aria-pressed=true]{background:var(--accent);color:#231a00;border-color:var(--accent)}
+a{color:var(--downfg)}
+footer{margin-top:14px;text-align:center;font-size:.7rem;color:var(--muted);font-weight:600;line-height:1.8}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>タイプ相性クイズ <span style="color:var(--muted);font-weight:600;font-size:.8rem">Pokémon GO PvP</span></h1>
+  <p class="sub">60秒。表を見ずに、反射で倍率を出せるか。</p>
+
+  <!-- スタート -->
+  <section id="start" class="panel center">
+    <p class="hint">攻撃タイプと防御タイプが出ます。<br>ダメージ倍率を4択で答えてください。</p>
+    <div class="modes">
+      <button id="m-single" aria-pressed="true">単タイプ</button>
+      <button id="m-dual" aria-pressed="false">複合あり</button>
+    </div>
+    <button class="big" id="go">スタート</button>
+    <p class="hint" id="best" style="margin-top:12px"></p>
+  </section>
+
+  <!-- プレイ -->
+  <section id="play" class="hide">
+    <div class="hud">
+      <div><b id="t">60</b><span>のこり秒</span></div>
+      <div><b id="s">0</b><span>スコア</span></div>
+      <div><b id="k">0</b><span>連続</span></div>
+    </div>
+    <div id="bar"><i id="bari"></i></div>
+    <div class="panel">
+      <div class="q">
+        <div class="qlabel">こうげき</div>
+        <div class="chips" id="atk"></div>
+        <div class="arrow">▼</div>
+        <div class="qlabel">ぼうぎょ</div>
+        <div class="chips" id="def"></div>
+      </div>
+      <div class="opts" id="opts"></div>
+    </div>
+  </section>
+
+  <!-- 結果 -->
+  <section id="end" class="panel center hide">
+    <p class="hint" style="margin:0">スコア</p>
+    <div class="score" id="fs">0</div>
+    <p class="hint" id="fd"></p>
+    <button class="big" id="again">もう一回</button>
+    <button class="ghost" id="share">結果をコピー</button>
+    <div class="rows" id="rows"></div>
+  </section>
+
+  <footer>
+    倍率は Pokémon GO の計算式（×1.6 / ×0.625）に準拠<br>
+    <a href="./type-matrix.html">相性表ツールを開く</a>
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ---- データ: type-matrix.html と同一（GOの×1.6計算式） ---- */
+const TYPES = ["ノーマル","ほのお","みず","くさ","でんき","こおり","かくとう","どく","じめん","ひこう","エスパー","むし","いわ","ゴースト","ドラゴン","あく","はがね","フェアリー"];
+const TYPE_CHART = {
+  ノーマル:   {いわ:0.625,はがね:0.625,ゴースト:0},
+  ほのお:     {ほのお:0.625,みず:0.625,いわ:0.625,ドラゴン:0.625,くさ:1.6,こおり:1.6,むし:1.6,はがね:1.6},
+  みず:       {みず:0.625,くさ:0.625,ドラゴン:0.625,ほのお:1.6,じめん:1.6,いわ:1.6},
+  くさ:       {ほのお:0.625,くさ:0.625,どく:0.625,ひこう:0.625,むし:0.625,ドラゴン:0.625,はがね:0.625,みず:1.6,じめん:1.6,いわ:1.6},
+  でんき:     {くさ:0.625,でんき:0.625,ドラゴン:0.625,じめん:0,みず:1.6,ひこう:1.6},
+  こおり:     {みず:0.625,こおり:0.625,ほのお:0.625,はがね:0.625,くさ:1.6,じめん:1.6,ひこう:1.6,ドラゴン:1.6},
+  かくとう:   {どく:0.625,むし:0.625,エスパー:0.625,ひこう:0.625,フェアリー:0.625,ゴースト:0,ノーマル:1.6,こおり:1.6,いわ:1.6,あく:1.6,はがね:1.6},
+  どく:       {どく:0.625,じめん:0.625,いわ:0.625,ゴースト:0.625,はがね:0.390625,くさ:1.6,フェアリー:1.6},
+  じめん:     {くさ:0.625,むし:0.625,ひこう:0,ほのお:1.6,でんき:1.6,どく:1.6,いわ:1.6,はがね:1.6},
+  ひこう:     {でんき:0.625,いわ:0.625,はがね:0.625,くさ:1.6,かくとう:1.6,むし:1.6},
+  エスパー:   {エスパー:0.625,はがね:0.625,あく:0,かくとう:1.6,どく:1.6},
+  むし:       {ほのお:0.625,かくとう:0.625,ひこう:0.625,ゴースト:0.625,はがね:0.625,どく:0.625,フェアリー:0.625,くさ:1.6,エスパー:1.6,あく:1.6},
+  いわ:       {かくとう:0.625,じめん:0.625,はがね:0.625,ほのお:1.6,こおり:1.6,ひこう:1.6,むし:1.6},
+  ゴースト:   {あく:0.625,ノーマル:0,ゴースト:1.6,エスパー:1.6},
+  ドラゴン:   {はがね:0.625,フェアリー:0,ドラゴン:1.6},
+  あく:       {かくとう:0.625,あく:0.625,フェアリー:0.625,エスパー:1.6,ゴースト:1.6},
+  はがね:     {ほのお:0.625,みず:0.625,でんき:0.625,はがね:0.625,こおり:1.6,いわ:1.6,フェアリー:1.6},
+  フェアリー: {ほのお:0.625,どく:0.625,はがね:0.625,かくとう:1.6,ドラゴン:1.6,あく:1.6}
+};
+const TYPE_COLOR = {
+  ノーマル:"#7a7a6b",ほのお:"#d84315",みず:"#1976d2",くさ:"#388e3c",でんき:"#f9a825",
+  こおり:"#00838f",かくとう:"#bf360c",どく:"#7b1fa2",じめん:"#8d6e63",ひこう:"#5c6bc0",
+  エスパー:"#ad1457",むし:"#558b2f",いわ:"#6d4c41",ゴースト:"#4527a0",ドラゴン:"#1565c0",
+  あく:"#37474f",はがね:"#546e7a",フェアリー:"#c2185b"
+};
+
+/* 倍率の取りうる値（単/複合とも積で決まる） */
+const BUCKETS = [
+  {v:2.56,     label:"×2.56"},
+  {v:1.6,      label:"×1.6"},
+  {v:1,        label:"×1"},
+  {v:0.625,    label:"×0.625"},
+  {v:0.390625, label:"×0.39"},
+  {v:0.244140625, label:"×0.24"},   // どく→はがね(0.39)にもう1つ抵抗が乗る組み合わせ（全3078通り中4組）
+  {v:0,        label:"×0"}
+];
+const eff = (atk, defs) => defs.reduce((m,d)=> m * (TYPE_CHART[atk]?.[d] ?? 1), 1);
+const near = (a,b) => Math.abs(a-b) < 1e-6;
+const pick = a => a[Math.floor(Math.random()*a.length)];
+
+/* ---- 状態 ---- */
+const DURATION = 60;
+let mode="single", score=0, streak=0, best=0, left=DURATION, timer=null, cur=null, log=[], answering=false;
+
+const $ = id => document.getElementById(id);
+const BEST_KEY = "ptm-quiz-best-v1";
+
+function chip(t){
+  const s=document.createElement("span");
+  s.className="chip"; s.textContent=t; s.style.background=TYPE_COLOR[t]||"#555";
+  return s;
+}
+
+function makeQuestion(){
+  const atk = pick(TYPES);
+  let defs=[pick(TYPES)];
+  if(mode==="dual" && Math.random()<0.55){
+    let d2=pick(TYPES);
+    let guard=0;
+    while(d2===defs[0] && guard++<20) d2=pick(TYPES);
+    if(d2!==defs[0]) defs.push(d2);
+  }
+  const v = eff(atk,defs);
+  const correct = BUCKETS.find(b=>near(b.v,v)) || {v, label:"×"+(Math.round(v*100)/100)};
+
+  // 選択肢4つ（正解＋近い倍率から3つ）
+  const others = BUCKETS.filter(b=>!near(b.v,correct.v));
+  const opts=[correct];
+  while(opts.length<4 && others.length){
+    const i=Math.floor(Math.random()*others.length);
+    opts.push(others.splice(i,1)[0]);
+  }
+  opts.sort((a,b)=>b.v-a.v);
+  return {atk,defs,correct,opts};
+}
+
+function render(){
+  cur = makeQuestion();
+  answering=false;
+  $("atk").replaceChildren(chip(cur.atk));
+  $("def").replaceChildren(...cur.defs.map(chip));
+  const box=$("opts"); box.replaceChildren();
+  cur.opts.forEach(o=>{
+    const b=document.createElement("button");
+    b.className="opt"; b.textContent=o.label;
+    b.addEventListener("click",()=>answer(b,o));
+    box.appendChild(b);
+  });
+}
+
+function answer(btn,o){
+  if(answering) return;
+  answering=true;
+  const hit = near(o.v, cur.correct.v);
+  [...$("opts").children].forEach(b=>b.disabled=true);
+  if(hit){
+    btn.classList.add("ok");
+    streak++; score += 1 + Math.floor(streak/5);   // 5連続ごとに加点
+  }else{
+    btn.classList.add("ng");
+    [...$("opts").children].find(b=>b.textContent===cur.correct.label)?.classList.add("ok");
+    streak=0;
+  }
+  log.push({q:`${cur.atk} → ${cur.defs.join("・")}`, a:cur.correct.label, hit});
+  $("s").textContent=score; $("k").textContent=streak;
+  setTimeout(()=>{ if(left>0) render(); }, hit?230:750);
+}
+
+function tick(){
+  left--;
+  $("t").textContent=Math.max(0,left);
+  $("bari").style.width=(Math.max(0,left)/DURATION*100)+"%";
+  if(left<=0) finish();
+}
+
+function start(){
+  score=0; streak=0; left=DURATION; log=[];
+  $("s").textContent=0; $("k").textContent=0; $("t").textContent=DURATION;
+  $("bari").style.width="100%";
+  $("start").classList.add("hide"); $("end").classList.add("hide");
+  $("play").classList.remove("hide");
+  render();
+  clearInterval(timer); timer=setInterval(tick,1000);
+}
+
+function finish(){
+  clearInterval(timer);
+  $("play").classList.add("hide"); $("end").classList.remove("hide");
+  const hits=log.filter(l=>l.hit).length;
+  const rate=log.length?Math.round(hits/log.length*100):0;
+  $("fs").textContent=score;
+  $("fd").textContent=`${log.length}問中 ${hits}問正解（正答率 ${rate}%）／${mode==="dual"?"複合あり":"単タイプ"}`;
+
+  if(score>best){
+    best=score;
+    try{ localStorage.setItem(BEST_KEY,String(best)); }catch(e){}
+    $("fd").textContent += " — 自己ベスト更新";
+  }
+  const rows=$("rows"); rows.replaceChildren();
+  log.slice().reverse().forEach(l=>{
+    const d=document.createElement("div");
+    d.className="row"+(l.hit?"":" miss");
+    d.innerHTML=`<span class="m">${l.q}</span><span class="v">${l.a}</span>`;
+    rows.appendChild(d);
+  });
+  showBest();
+}
+
+function showBest(){
+  $("best").textContent = best ? `自己ベスト ${best}点` : "";
+}
+
+/* ---- 起動 ---- */
+try{ best = parseInt(localStorage.getItem(BEST_KEY)||"0",10)||0; }catch(e){ best=0; }
+showBest();
+
+$("go").addEventListener("click",start);
+$("again").addEventListener("click",start);
+$("m-single").addEventListener("click",()=>setMode("single"));
+$("m-dual").addEventListener("click",()=>setMode("dual"));
+function setMode(m){
+  mode=m;
+  $("m-single").setAttribute("aria-pressed",String(m==="single"));
+  $("m-dual").setAttribute("aria-pressed",String(m==="dual"));
+}
+$("share").addEventListener("click",async ()=>{
+  const hits=log.filter(l=>l.hit).length;
+  const text=`タイプ相性クイズ 60秒：${score}点（${log.length}問中${hits}問正解／${mode==="dual"?"複合あり":"単タイプ"}）\n${location.href}`;
+  try{
+    if(navigator.share){ await navigator.share({text}); }
+    else { await navigator.clipboard.writeText(text); $("share").textContent="コピーしました"; setTimeout(()=>$("share").textContent="結果をコピー",1600); }
+  }catch(e){ /* 共有キャンセルは無視 */ }
+});
+</script>
+</body>
+</html>
