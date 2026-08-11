@@ -18,5 +18,17 @@ Pokémon GO PvP のタイプ相性表ツール（単一HTML `type-matrix.html`�
 - 単タイプ／複合ありの2モード、結果の共有テキスト生成
 - **相性表を更新したら quiz.html 側の TYPE_CHART も同じ値に揃えること**（2箇所に同じ表がある。ズレたら検証スクリプトで気づけるようにするのが次の改善案）
 
+## アクセス計測（2026-08-11 設置）
+
+`quiz.html` の `<head>` に GoatCounter のスニペットがある。**`window.GC_CODE` が `"MYCODE"` の
+間は外部スクリプトを一切読み込まない**（＝計測は動かない・通信もしない）。実コードに書き換えると動き出す。
+
+- 同じスニペットが `diet-pace-simulator/index.html` にもある。**片方を直したらもう片方も揃える**
+- 2作品とも `takakun-art.github.io` 配下なので、GoatCounterのサイト登録は**1つでよい**（パスで区別）
+- 送っているイベント: `quiz-start-single` / `quiz-start-dual` / `quiz-complete` / `quiz-share`
+- **スコア・回答内容は送らない。** 送るのは「開始した・完走した・共有した」という事実だけ
+- 計測が壊れてもクイズ本体は動く（`gcEvent` は未ロード時に黙って捨てる）
+- 記録と週次報告は `~/.claude/scheduled-tasks/product-traffic-weekly/SKILL.md` が担当
+
 ## 運用ルール
 - Git運用は `~/.claude/CLAUDE.md` の「Git 運用ルール」に従う（ファイルを作成・更新したら必ずコミット。コミット本文に判断者〈くんたか / Claude〉と変更理由を書く）。

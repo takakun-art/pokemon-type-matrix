@@ -69,6 +69,33 @@ a{color:var(--downfg)}
 footer{margin-top:14px;text-align:center;font-size:.7rem;color:var(--muted);font-weight:600;line-height:1.8}
 .hide{display:none!important}
 </style>
+
+<!-- ── アクセス計測（GoatCounter）─────────────────────────────────
+     GC_CODE を自分のサイトコードに書き換えると計測が始まる。
+     "MYCODE" のままなら外部スクリプトを一切読み込まない（＝完全に無効）。
+     Cookieを置かず、IPも保存しない。入力値・スコアは送らない。
+     ※ 2プロダクトで同一のスニペット。片方を直したらもう片方も揃えること。
+──────────────────────────────────────────────────────────── -->
+<script>
+"use strict";
+window.GC_CODE = "MYCODE";
+(function(){
+  if(!window.GC_CODE || window.GC_CODE === "MYCODE") return;
+  var s = document.createElement("script");
+  s.async = true;
+  s.src = "//gc.zgo.at/count.js";
+  s.setAttribute("data-goatcounter", "https://" + window.GC_CODE + ".goatcounter.com/count");
+  document.head.appendChild(s);
+})();
+/* 手動イベント。未設定・未ロード・広告ブロック時は黙って捨てる（本体の動作に影響させない） */
+window.gcEvent = function(name){
+  try{
+    if(window.goatcounter && window.goatcounter.count){
+      window.goatcounter.count({path:name, title:name, event:true});
+    }
+  }catch(e){}
+};
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -118,7 +145,8 @@ footer{margin-top:14px;text-align:center;font-size:.7rem;color:var(--muted);font
 
   <footer>
     倍率は Pokémon GO の計算式（×1.6 / ×0.625）に準拠<br>
-    <a href="./type-matrix.html">相性表ツールを開く</a>
+    <a href="./type-matrix.html">相性表ツールを開く</a><br>
+    訪問者数だけ、Cookieを使わない計測（GoatCounter）で数えています。スコアや回答は送っていません。
   </footer>
 </div>
 
@@ -250,6 +278,7 @@ function start(){
   $("play").classList.remove("hide");
   render();
   clearInterval(timer); timer=setInterval(tick,1000);
+  gcEvent(mode==="dual" ? "quiz-start-dual" : "quiz-start-single");
 }
 
 function finish(){
@@ -273,6 +302,7 @@ function finish(){
     rows.appendChild(d);
   });
   showBest();
+  gcEvent("quiz-complete");   // 60秒を最後まで遊んだ＝到達の本命指標
 }
 
 function showBest(){
@@ -298,6 +328,7 @@ $("share").addEventListener("click",async ()=>{
   try{
     if(navigator.share){ await navigator.share({text}); }
     else { await navigator.clipboard.writeText(text); $("share").textContent="コピーしました"; setTimeout(()=>$("share").textContent="結果をコピー",1600); }
+    gcEvent("quiz-share");   // キャンセル時は上でthrowするのでここには来ない
   }catch(e){ /* 共有キャンセルは無視 */ }
 });
 </script>
